@@ -58,7 +58,7 @@ export class BlogService {
 
     return blog;
   };
-  
+
   createBlog = async (
     body: CreateBlogDTO,
     thumbnail: Express.Multer.File,
@@ -85,5 +85,27 @@ export class BlogService {
         slug,
       },
     });
+  };
+  deleteBlog = async (id: number, authUserId: number) => {
+    const blog = await this.prisma.blog.findFirst({
+      where: { id },
+    });
+
+    if (!blog) {
+      throw new ApiError("No data", 400);
+    }
+
+    if (blog.userId !== authUserId) {
+      throw new ApiError("Forbidden", 400);
+    }
+
+    await this.cloudinaryService.remove(blog.thumbnail);
+
+    await this.prisma.blog.update({
+      where: { id },
+      data: { thumbnail: "", deletedAt: new Date() },
+    });
+
+    return { message: "Delete blog success" };
   };
 }
