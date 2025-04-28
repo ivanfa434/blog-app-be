@@ -31,7 +31,7 @@ export class BlogController {
       next(error);
     }
   };
-  
+
   createBlog = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const files = req.files as { [fieldName: string]: Express.Multer.File[] };
@@ -44,6 +44,16 @@ export class BlogController {
         thumbnail,
         res.locals.user.id
       );
+      res.status(200).send(result);
+    } catch (error) {
+      next(error);
+    }
+  };
+  deleteBlog = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const id = Number(req.params.id);
+      const authUserId = Number(res.locals.user.id);
+      const result = await this.blogService.deleteBlog(id, authUserId);
       res.status(200).send(result);
     } catch (error) {
       next(error);
