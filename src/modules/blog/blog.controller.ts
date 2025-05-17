@@ -23,6 +23,23 @@ export class BlogController {
     }
   };
 
+  getBlogsByUserId = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const query = plainToInstance(GetBlogsDTO, req.query);
+      const result = await this.blogService.getBlogsByUserId(
+        res.locals.user.id,
+        query
+      );
+      res.status(200).send(result);
+    } catch (error) {
+      next(error);
+    }
+  };
+
   getBlogBySlug = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const result = await this.blogService.getBlogBySlug(req.params.slug);

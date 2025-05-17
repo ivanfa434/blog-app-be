@@ -29,6 +29,11 @@ export class BlogRouter {
 
   private initializeRoutes = () => {
     this.router.get("/", this.blogController.getBlogs);
+    this.router.get(
+      "/user",
+      this.jwtMiddleware.verifyToken(JWT_SECRET_KEY!),
+      this.blogController.getBlogsByUserId
+    );
     this.router.get("/:slug", this.blogController.getBlogBySlug);
     this.router.post(
       "/",
@@ -44,6 +49,7 @@ export class BlogRouter {
       validateBody(CreateBlogDTO),
       this.blogController.createBlog
     );
+
     this.router.patch(
       "/:id",
       this.jwtMiddleware.verifyToken(JWT_SECRET_KEY!),
