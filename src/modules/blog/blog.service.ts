@@ -47,6 +47,33 @@ export class BlogService {
     };
   };
 
+  getBlogsByUserId = async (authUserId: number, query: GetBlogsDTO) => {
+    const { page, take, sortBy, sortOrder, search } = query;
+    const whereClause: Prisma.BlogWhereInput = {
+      userId: authUserId,
+      deletedAt: null,
+    };
+    if (search) {
+      whereClause.title = { contains: search, mode: "insensitive" };
+    }
+    const blogs = await this.prisma.blog.findMany({
+      where: whereClause,
+      orderBy: { [sortBy]: sortOrder },
+      skip: (page - 1) * take,
+      take,
+      include: { user: { select: { id: true, name: true, email: true } } },
+    });
+ 
+    if (!blogs) {
+      throw new ApiError("No data", 400);
+    }
+    const count = await this.prisma.blog.count({ where: whereClause });
+    return {
+      data: blogs,
+      meta: { page, take, total: count },
+    };
+  };
+
   getBlogBySlug = async (slug: string) => {
     const blog = await this.prisma.blog.findFirst({
       where: { slug },
