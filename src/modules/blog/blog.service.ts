@@ -6,6 +6,7 @@ import { CreateBlogDTO } from "./dto/create-blog.dto";
 import { CloudinaryService } from "../cloudinary/cloudinary.service";
 import { ApiError } from "../../utils/api-error";
 import { generateSlug } from "../../utils/generateSlug";
+import { UpdateBlogDTO } from "./dto/update-blog.dto";
 
 @injectable()
 export class BlogService {
@@ -86,6 +87,51 @@ export class BlogService {
       },
     });
   };
+
+  updateBlog = async (
+    id: number,
+    body: UpdateBlogDTO,
+    authUserId: number,
+    thumbnail?: Express.Multer.File
+  ) => {
+    const blog = await this.prisma.blog.findFirst({
+      where: { id },
+    });
+
+    if (!blog) {
+      throw new ApiError("Invalid blog id", 400);
+    }
+
+    if (blog.userId !== authUserId) {
+      throw new ApiError("Forbidden", 403);
+    }
+
+    let newSlug = blog.slug;
+
+    if (body.title) {
+      const blogTitle = await this.prisma.blog.findFirst({
+        where: { title: body.title },
+      });
+
+      if (blogTitle) {
+        throw new ApiError("Title already used", 400);
+      }
+
+      newSlug = generateSlug(body.title);
+    }
+    let newThumbnail = blog.thumbnail;
+
+    if (thumbnail) {
+      await this.cloudinaryService.remove(blog.thumbnail);
+      const { secure_url } = await this.cloudinaryService.upload(thumbnail);
+    }
+
+    await this.prisma.blog.update({
+      where: { id },
+      data: { ...body, slug: newSlug, thumbnail: newThumbnail },
+    });
+  };
+
   deleteBlog = async (id: number, authUserId: number) => {
     const blog = await this.prisma.blog.findFirst({
       where: { id },
